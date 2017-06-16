@@ -1,0 +1,178 @@
+swagger: '2.0'
+
+info:
+  title: SIARHES API
+  description: API exclusiva para o Acesso Cidadão acessar a dados do SIARHES.
+  version: "1.0.0"
+host: 127.0.0.1:3000
+schemes:
+  - http
+  - https
+basePath: /ac
+produces:
+  - application/json
+security:
+  - clientCredentials:
+    - siarhes_basico
+
+# Definições dos Endpoints
+paths:
+  /servidor:
+    get:
+      operationId: situacaoServidor
+      description: Retorna informações sobre a situação do servidor no SIARHES.
+      parameters:
+        - $ref: '#/parameters/CPF'
+      responses:
+        200:
+          description: Situação do servidor no SIARHES.
+          schema:
+            type: object
+            properties:
+              CPF:
+                type: integer
+                description: CPF do servidor pesquisado.
+              PERFIS:
+                type: array
+                items:
+                  $ref: '#/definitions/Perfil'
+        400:
+          $ref: '#/responses/Error'
+        401:
+          $ref: '#/responses/AuthError'
+            
+  /servidor/dados:
+    get:
+      operationId: dadosPessoais
+      description: Retorna os dados pessoais do servidor.
+      parameters:
+        - $ref: '#/parameters/CPF'
+      responses:
+        200:
+          description: Dados pessoais do servidor.
+          schema:
+            $ref: "#/definitions/DadosPessoais"
+        400:
+          $ref: '#/responses/Error'
+        401:
+          $ref: '#/responses/AuthError'
+
+# Definições de Parâmetros
+parameters:
+  CPF:
+    name: cpf
+    in: query
+    description: CPF do Servidor
+    required: true
+    type: integer
+
+# Definições de Objetos
+definitions:
+  DadosPessoais:
+    type: object
+    properties:
+      NUMFUNC:
+        type: number
+      NOME:
+        type: string
+      MAE:
+        type: string
+      PAI: 
+        type: string
+      DTNASC:
+        type: string
+      NUMRG:
+        type: number
+      TIPORG:
+        type: string
+      ORGAORG:
+        type: string
+      UFRG:
+        type: string
+        
+  Perfil:
+    type: object
+    properties:
+      TIPO:
+        type: string
+        description: Tipo de Cadastro (Servidor, Pensionista, ...)
+      NUMFUNC:
+        type: number
+      OCUPACOES:
+        type: array
+        items:
+          $ref: '#/definitions/Ocupacao'
+          
+  Ocupacao:
+    type: object
+    properties:
+      SITUACAO:
+        type: string
+        description: Situação do Servidor |
+          A - Ativo
+          F - Férias
+          L - Licença
+          I - Inativo
+          C - Cedido
+      NUMVINC:
+        type: number
+      TIPOVINC:
+        type: string
+      EMPRESA_COD:
+        type: number
+      EMPRESA_NOME:
+        type: string
+      SUBEMP_COD:
+        type: number
+      SUBEMP_NOME:
+        type: string
+      OCUP_COD:
+        type: number
+      OCUP_TIPO:
+        type: string
+      OCUP_NOME:
+        type: string
+      OCUP_DTINI:
+        type: string
+      OCUP_DTFIM:
+        type: string
+        
+  Error:
+    type: object
+    properties:
+      message:
+        type: string
+
+# Definições de Responses
+responses:
+  Error:
+    description: Erro em caso de parâmetro inválido.
+    schema:
+      $ref: '#/definitions/Error'
+
+  AuthError:
+    description: Erro de autenticação.
+    schema:
+      $ref: '#/definitions/Error'
+
+# Definições de Perfis de Segurança
+securityDefinitions:
+  clientCredentials:
+    description: |
+      O token deve ser obtido atráves do Acesso Cidadão, através da URL https://acessocidadao.es.gov.br/is/connect/token. <br /> <br />
+      Para obter o token deve ser passado os headers a seguir. <br />
+      <strong>grant_type</strong> -> client_credentials <br />
+      <strong>client_id</strong> -> Seu identificador de client. <br />
+      <strong>client_secret</strong> -> Seu client secret. <br />
+      <strong>scope</strong> -> siarhes_basico <br /><br />
+      Para fazer as chamadas na API, basta incluir o header abaixo. <br />
+      <strong>Authorization</strong> -> Bearer <token>. <br /> <br />
+      O client tem acesso ter apenas na empresa/subempresa cadastrada nos claims.<br />
+      Atenção! Este tipo de autorização não deve ser utilizado, em ambientes onde não se pode guardar de forma segura as credenciais do client. Ex App Móvel ou Cliente Web<br /> <br />
+    type: oauth2
+    flow: application
+    tokenUrl: http://acessocidadao.es.gov.br/is/connect/token
+    scopes:
+      siarhes_basico: Permite o acesso de leitura a todos os endpoints da API.
+
+
